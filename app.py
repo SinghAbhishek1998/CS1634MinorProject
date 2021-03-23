@@ -1,7 +1,6 @@
 from flask import Flask, request, Response
 import numpy as np
 import cv2
-import easyocr
 import urllib.request
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,6 +8,7 @@ import requests
 import unicodedata
 import json
 import jsonify
+import pytesseract
 # Initialize the Flask application
 app = Flask(__name__)
 
@@ -73,11 +73,12 @@ def index():
             images.append(image[y:y+h,x:x+w])
         
 
-        reader = easyocr.Reader(['hi','en'])
-        
+        pytesseract.pytesseract.tesseract_cmd = 'Tesseract-OCR/tesseract.exe'
+        original_text=[]
         for i in images:
-            bounds = reader.readtext(i,detail=0)
-        original_text = ' '.join(map(str,bounds))
+            text = pytesseract.image_to_string(i)
+	    text = text.strip()
+	    original_text.append(text)
         
         translated_text = translate(text,tl)
 
