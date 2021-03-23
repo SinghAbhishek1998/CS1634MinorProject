@@ -73,7 +73,7 @@ def index():
             images.append(image[y:y+h,x:x+w])
         
 
-        pytesseract.pytesseract.tesseract_cmd = ‘/app/.apt/usr/bin/tesseract’
+        pytesseract.pytesseract.tesseract_cmd = '/app/.apt/usr/bin/tesseract'
         original_text=[]
         for i in images:
             text = pytesseract.image_to_string(i)
