@@ -36,7 +36,7 @@ PyWavelets==1.1.1
 PyYAML==5.4.1
 requests==2.25.1
 rfc3986==1.4.0
-scikit-image==0.18.1
+scikit-image==0.18.0rc1
 scipy==1.6.1
 six==1.15.0
 sniffio==1.2.0
