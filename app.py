@@ -73,7 +73,7 @@ def index():
             images.append(image[y:y+h,x:x+w])
         
 
-        reader = easyocr.Reader(['hi','en','bh','bho','bn','mr','ta','te','ur','as','kn','ne'])
+        reader = easyocr.Reader(['hi','en'])
         
         for i in images:
             bounds = reader.readtext(i,detail=0)
