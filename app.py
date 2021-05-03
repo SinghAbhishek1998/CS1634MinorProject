@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import requests
 import unicodedata
 import json
-import jsonify
+import jsonify 
 # Initialize the Flask application
 app = Flask(__name__)
 
@@ -46,43 +46,54 @@ def index():
         image = url_to_image(url)
 
         RGB_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        
             # Crop Image
         image = crop(RGB_img)
-
+        img_width = image.shape[0]
+        img_height = image.shape[1]
         # Convert Image into Grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        (thresh, image_binary) = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY)
+        thresh = cv2.threshold(gray, 0, 255,cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
 
-        # Eroded Image
-        erode=erosion(image_binary)
+        # apply connected compogrnent analysis to the thresholded image
+        output = cv2.connectedComponentsWithStats(
+            thresh, 4, cv2.CV_32S)
+        (numLabels, labels, stats, centroids) = output
 
-        # Making Contours
-        contours, hierarchy = cv2.findContours(erode, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        mask = list(hierarchy[0][:,-1]<=-1)
-        ids = np.arange(len(hierarchy[0]))
-        mid = ids[mask]
-        new_cnts = [contours[i] for i in mid]
-        cnts_temp = [i for i in new_cnts if cv2.contourArea(i)>1000.0]
-
-        images =[]
-
-        for sr, i in enumerate(cnts_temp):
-            x, y, w, h = cv2.boundingRect(i)
-            cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
-            images.append(image[y:y+h,x:x+w])
-        
-
+        mask = np.zeros(gray.shape, dtype="uint8")
+        # loop over the number of unique connected component labels, skipping
+        # over the first label (as label zero is the background)
+        for i in range(1, numLabels):
+            # extract the connected component statistics for the current
+            # label
+            x = stats[i, cv2.CC_STAT_LEFT]
+            y = stats[i, cv2.CC_STAT_TOP]
+            w = stats[i, cv2.CC_STAT_WIDTH]
+            h = stats[i, cv2.CC_STAT_HEIGHT]
+            area = stats[i, cv2.CC_STAT_AREA]
+            (cX, cY) = centroids[i]
+            
+            # ensure the width, height, and area are all neither too small
+            # nor too big
+            keepWidth =  w < 0.8 * img_width
+            keepHeight = h > 3 and h < 0.5 * img_height
+            # ensure the connected component we are examining passes all
+            # three tests
+            if all((keepWidth, keepHeight)):
+                # construct a mask for the current connected component and
+                # then take the bitwise OR with the mask 
+                print("[INFO] keeping connected component '{}'".format(i))
+                componentMask = (labels == i).astype("uint8") * 255
+                mask = cv2.bitwise_or(mask, componentMask)
+        invert = cv2.bitwise_not(mask)
         reader = easyocr.Reader(['hi','en'])
         
-        for i in images:
-            bounds = reader.readtext(i,detail=0)
-        original_text = ' '.join(map(str,bounds))
-        
-        translated_text = translate(original_text,tl)
+        original_text = reader.readtext(invert,detail=0)
+        text = ""
+        for i in original_text:
+            text +=i+" "
+        translated_text = translate(text,tl)
 
-        result = {'orig':original_text,'trans':translated_text}
-    return json.dumps(dictionary, indent = 4)
+    return json.dumps({'orig':text,'trans':translated_text},indent=4)
 
 
 # start flask app
