@@ -1,9 +1,9 @@
 -f https://download.pytorch.org/whl/torch_stable.html
+gunicorn==19.9.0
 torch==1.8.1+cpu
 torchvision==0.9.1+cpu
 numpy==1.19.5
 pandas==1.1.5
-gunicorn==19.9.0
 matplotlib==3.3.4
 jsonify==0.5
 requests==2.25.1
